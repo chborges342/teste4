@@ -4,1523 +4,479 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Gestão de Horários - Ciências Econômicas UESC</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        .schedule-cell {
-            min-height: 80px;
-            position: relative;
-        }
-        .schedule-cell:hover .schedule-actions {
-            display: block;
-        }
-        .schedule-actions {
-            display: none;
-            position: absolute;
-            top: 2px;
-            right: 2px;
-        }
-        .conflict {
-            background-color: #fee2e2 !important;
-            border: 2px solid #ef4444 !important;
-        }
-        @media print {
-            .no-print {
-                display: none !important;
-            }
-            body {
-                padding: 0;
-                margin: 0;
-            }
-            .print-section {
-                page-break-after: always;
-            }
-            .print-section:last-child {
-                page-break-after: auto;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
-<body class="bg-gray-50">
-    <div class="container mx-auto px-4 py-8">
+<body>
+    <div class="app-container">
         <!-- Header -->
-        <header class="mb-8 text-center">
-            <h1 class="text-3xl font-bold text-blue-800">Sistema de Gestão de Horários</h1>
-            <h2 class="text-xl text-blue-600">Curso de Ciências Econômicas - UESC</h2>
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-calendar-alt"></i>
+                    <h1>Gestão de Horários</h1>
+                    <span class="subtitle">Ciências Econômicas - UESC</span>
+                </div>
+                <nav class="nav-menu">
+                    <button class="nav-btn active" data-section="dashboard">
+                        <i class="fas fa-home"></i>
+                        Dashboard
+                    </button>
+                    <button class="nav-btn" data-section="cadastros">
+                        <i class="fas fa-plus-circle"></i>
+                        Cadastros
+                    </button>
+                    <button class="nav-btn" data-section="horarios">
+                        <i class="fas fa-clock"></i>
+                        Horários
+                    </button>
+                    <button class="nav-btn" data-section="impressao">
+                        <i class="fas fa-print"></i>
+                        Impressão
+                    </button>
+                </nav>
+            </div>
         </header>
 
-        <!-- Navigation Tabs -->
-        <div class="flex border-b border-gray-200 mb-6 no-print">
-            <button id="dashboard-tab" class="px-4 py-2 font-medium text-blue-600 border-b-2 border-blue-600">Dashboard</button>
-            <button id="professors-tab" class="px-4 py-2 font-medium text-gray-500 hover:text-blue-600">Professores</button>
-            <button id="subjects-tab" class="px-4 py-2 font-medium text-gray-500 hover:text-blue-600">Disciplinas</button>
-            <button id="classrooms-tab" class="px-4 py-2 font-medium text-gray-500 hover:text-blue-600">Salas</button>
-            <button id="schedules-tab" class="px-4 py-2 font-medium text-gray-500 hover:text-blue-600">Horários</button>
-            <button id="reports-tab" class="px-4 py-2 font-medium text-gray-500 hover:text-blue-600">Relatórios</button>
-        </div>
-
-        <!-- Dashboard Section -->
-        <section id="dashboard-section" class="mb-8">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                <div class="bg-white p-6 rounded-lg shadow">
-                    <div class="flex items-center">
-                        <div class="p-3 rounded-full bg-blue-100 text-blue-600 mr-4">
-                            <i class="fas fa-chalkboard-teacher text-xl"></i>
-                        </div>
-                        <div>
-                            <h3 class="text-gray-500 font-medium">Professores</h3>
-                            <p class="text-2xl font-bold" id="professor-count">0</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="bg-white p-6 rounded-lg shadow">
-                    <div class="flex items-center">
-                        <div class="p-3 rounded-full bg-green-100 text-green-600 mr-4">
-                            <i class="fas fa-book text-xl"></i>
-                        </div>
-                        <div>
-                            <h3 class="text-gray-500 font-medium">Disciplinas</h3>
-                            <p class="text-2xl font-bold" id="subject-count">0</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="bg-white p-6 rounded-lg shadow">
-                    <div class="flex items-center">
-                        <div class="p-3 rounded-full bg-purple-100 text-purple-600 mr-4">
-                            <i class="fas fa-door-open text-xl"></i>
-                        </div>
-                        <div>
-                            <h3 class="text-gray-500 font-medium">Salas</h3>
-                            <p class="text-2xl font-bold" id="classroom-count">0</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-white p-6 rounded-lg shadow mb-6">
-                <h3 class="text-lg font-medium mb-4">Horários Recentes</h3>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Disciplina</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Professor</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Turma</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sala</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Horário</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200" id="recent-schedules">
-                            <!-- Recent schedules will be added here -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
-
-        <!-- Professors Section -->
-        <section id="professors-section" class="mb-8 hidden">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold text-gray-800">Gestão de Professores</h2>
-                <button id="add-professor-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center">
-                    <i class="fas fa-plus mr-2"></i> Adicionar Professor
-                </button>
-            </div>
-
-            <!-- Add Professor Modal -->
-            <div id="professor-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-                <div class="bg-white rounded-lg p-6 w-full max-w-md">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-medium">Adicionar Professor</h3>
-                        <button id="close-professor-modal" class="text-gray-500 hover:text-gray-700">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                    <form id="professor-form">
-                        <div class="mb-4">
-                            <label for="professor-name" class="block text-sm font-medium text-gray-700 mb-1">Nome</label>
-                            <input type="text" id="professor-name" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                        </div>
-                        <div class="mb-4">
-                            <label for="professor-email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                            <input type="email" id="professor-email" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                        </div>
-                        <div class="mb-4">
-                            <label for="professor-phone" class="block text-sm font-medium text-gray-700 mb-1">Telefone</label>
-                            <input type="tel" id="professor-phone" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        </div>
-                        <div class="flex justify-end">
-                            <button type="button" id="cancel-professor" class="mr-2 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100">Cancelar</button>
-                            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Salvar</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-
-            <!-- Professors Table -->
-            <div class="bg-white rounded-lg shadow overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Telefone</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200" id="professors-table-body">
-                            <!-- Professors will be added here -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
-
-        <!-- Subjects Section -->
-        <section id="subjects-section" class="mb-8 hidden">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold text-gray-800">Gestão de Disciplinas</h2>
-                <button id="add-subject-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center">
-                    <i class="fas fa-plus mr-2"></i> Adicionar Disciplina
-                </button>
-            </div>
-
-            <!-- Add Subject Modal -->
-            <div id="subject-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-                <div class="bg-white rounded-lg p-6 w-full max-w-md">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-medium">Adicionar Disciplina</h3>
-                        <button id="close-subject-modal" class="text-gray-500 hover:text-gray-700">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                    <form id="subject-form">
-                        <div class="mb-4">
-                            <label for="subject-code" class="block text-sm font-medium text-gray-700 mb-1">Código</label>
-                            <input type="text" id="subject-code" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                        </div>
-                        <div class="mb-4">
-                            <label for="subject-name" class="block text-sm font-medium text-gray-700 mb-1">Nome</label>
-                            <input type="text" id="subject-name" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                        </div>
-                        <div class="mb-4">
-                            <label for="subject-semester" class="block text-sm font-medium text-gray-700 mb-1">Semestre</label>
-                            <select id="subject-semester" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                                <option value="">Selecione o semestre</option>
-                                <option value="1">1º Semestre</option>
-                                <option value="2">2º Semestre</option>
-                                <option value="3">3º Semestre</option>
-                                <option value="4">4º Semestre</option>
-                                <option value="5">5º Semestre</option>
-                                <option value="6">6º Semestre</option>
-                                <option value="7">7º Semestre</option>
-                                <option value="8">8º Semestre</option>
-                                <option value="9">9º Semestre</option>
-                                <option value="10">10º Semestre</option>
-                            </select>
-                        </div>
-                        <div class="mb-4">
-                            <label for="subject-shift" class="block text-sm font-medium text-gray-700 mb-1">Turno</label>
-                            <select id="subject-shift" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                                <option value="">Selecione o turno</option>
-                                <option value="matutino">Matutino</option>
-                                <option value="noturno">Noturno</option>
-                            </select>
-                        </div>
-                        <div class="mb-4">
-                            <label for="subject-workload" class="block text-sm font-medium text-gray-700 mb-1">Carga Horária (horas)</label>
-                            <input type="number" id="subject-workload" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                        </div>
-                        <div class="flex justify-end">
-                            <button type="button" id="cancel-subject" class="mr-2 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100">Cancelar</button>
-                            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Salvar</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-
-            <!-- Subjects Table -->
-            <div class="bg-white rounded-lg shadow overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Código</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Semestre</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Turno</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Carga Horária</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200" id="subjects-table-body">
-                            <!-- Subjects will be added here -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
-
-        <!-- Classrooms Section -->
-        <section id="classrooms-section" class="mb-8 hidden">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold text-gray-800">Gestão de Salas</h2>
-                <button id="add-classroom-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center">
-                    <i class="fas fa-plus mr-2"></i> Adicionar Sala
-                </button>
-            </div>
-
-            <!-- Add Classroom Modal -->
-            <div id="classroom-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-                <div class="bg-white rounded-lg p-6 w-full max-w-md">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-medium">Adicionar Sala</h3>
-                        <button id="close-classroom-modal" class="text-gray-500 hover:text-gray-700">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                    <form id="classroom-form">
-                        <div class="mb-4">
-                            <label for="classroom-code" class="block text-sm font-medium text-gray-700 mb-1">Código</label>
-                            <input type="text" id="classroom-code" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                        </div>
-                        <div class="mb-4">
-                            <label for="classroom-name" class="block text-sm font-medium text-gray-700 mb-1">Nome</label>
-                            <input type="text" id="classroom-name" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                        </div>
-                        <div class="mb-4">
-                            <label for="classroom-capacity" class="block text-sm font-medium text-gray-700 mb-1">Capacidade</label>
-                            <input type="number" id="classroom-capacity" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                        </div>
-                        <div class="mb-4">
-                            <label for="classroom-type" class="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
-                            <select id="classroom-type" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                                <option value="">Selecione o tipo</option>
-                                <option value="sala">Sala de Aula</option>
-                                <option value="laboratorio">Laboratório</option>
-                                <option value="auditorio">Auditório</option>
-                            </select>
-                        </div>
-                        <div class="flex justify-end">
-                            <button type="button" id="cancel-classroom" class="mr-2 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100">Cancelar</button>
-                            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Salvar</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-
-            <!-- Classrooms Table -->
-            <div class="bg-white rounded-lg shadow overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Código</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Capacidade</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200" id="classrooms-table-body">
-                            <!-- Classrooms will be added here -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
-
-        <!-- Schedules Section -->
-        <section id="schedules-section" class="mb-8 hidden">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold text-gray-800">Gestão de Horários</h2>
-                <button id="add-schedule-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center">
-                    <i class="fas fa-plus mr-2"></i> Adicionar Horário
-                </button>
-            </div>
-
-            <!-- Add Schedule Modal -->
-            <div id="schedule-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-                <div class="bg-white rounded-lg p-6 w-full max-w-2xl">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-medium">Adicionar Horário</h3>
-                        <button id="close-schedule-modal" class="text-gray-500 hover:text-gray-700">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                    <form id="schedule-form">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                            <div>
-                                <label for="schedule-semester" class="block text-sm font-medium text-gray-700 mb-1">Semestre/Turma</label>
-                                <select id="schedule-semester" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                                    <option value="">Selecione o semestre/turma</option>
-                                    <!-- Options will be added dynamically -->
-                                </select>
-                            </div>
-                            <div>
-                                <label for="schedule-subject" class="block text-sm font-medium text-gray-700 mb-1">Disciplina</label>
-                                <select id="schedule-subject" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                                    <option value="">Selecione a disciplina</option>
-                                    <!-- Options will be added dynamically -->
-                                </select>
-                            </div>
-                            <div>
-                                <label for="schedule-professor" class="block text-sm font-medium text-gray-700 mb-1">Professor</label>
-                                <select id="schedule-professor" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                                    <option value="">Selecione o professor</option>
-                                    <!-- Options will be added dynamically -->
-                                </select>
-                            </div>
-                            <div>
-                                <label for="schedule-classroom" class="block text-sm font-medium text-gray-700 mb-1">Sala</label>
-                                <select id="schedule-classroom" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                                    <option value="">Selecione a sala</option>
-                                    <!-- Options will be added dynamically -->
-                                </select>
-                            </div>
-                            <div>
-                                <label for="schedule-day" class="block text-sm font-medium text-gray-700 mb-1">Dia da Semana</label>
-                                <select id="schedule-day" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                                    <option value="">Selecione o dia</option>
-                                    <option value="segunda">Segunda-feira</option>
-                                    <option value="terca">Terça-feira</option>
-                                    <option value="quarta">Quarta-feira</option>
-                                    <option value="quinta">Quinta-feira</option>
-                                    <option value="sexta">Sexta-feira</option>
-                                    <option value="sabado">Sábado</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label for="schedule-time" class="block text-sm font-medium text-gray-700 mb-1">Horário</label>
-                                <select id="schedule-time" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                                    <option value="">Selecione o horário</option>
-                                    <!-- Options will be added dynamically based on shift -->
-                                </select>
-                            </div>
-                        </div>
-                        <div class="mb-4">
-                            <label for="schedule-notes" class="block text-sm font-medium text-gray-700 mb-1">Observações</label>
-                            <textarea id="schedule-notes" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" rows="2"></textarea>
-                        </div>
-                        <div id="schedule-conflict-alert" class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 hidden">
-                            <p><strong>Conflito detectado!</strong> Este professor ou sala já está alocado neste horário.</p>
-                        </div>
-                        <div class="flex justify-end">
-                            <button type="button" id="cancel-schedule" class="mr-2 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100">Cancelar</button>
-                            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Salvar</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-
-            <!-- Schedule Filters -->
-            <div class="bg-white p-4 rounded-lg shadow mb-6">
-                <h3 class="text-lg font-medium mb-3">Filtrar Horários</h3>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                        <label for="filter-semester" class="block text-sm font-medium text-gray-700 mb-1">Semestre/Turma</label>
-                        <select id="filter-semester" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="">Todos os semestres</option>
-                            <!-- Options will be added dynamically -->
-                        </select>
-                    </div>
-                    <div>
-                        <label for="filter-professor" class="block text-sm font-medium text-gray-700 mb-1">Professor</label>
-                        <select id="filter-professor" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="">Todos os professores</option>
-                            <!-- Options will be added dynamically -->
-                        </select>
-                    </div>
-                    <div>
-                        <label for="filter-subject" class="block text-sm font-medium text-gray-700 mb-1">Disciplina</label>
-                        <select id="filter-subject" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="">Todas as disciplinas</option>
-                            <!-- Options will be added dynamically -->
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Schedule View Tabs -->
-            <div class="flex border-b border-gray-200 mb-6">
-                <button id="semester-view-tab" class="px-4 py-2 font-medium text-blue-600 border-b-2 border-blue-600">Por Semestre</button>
-                <button id="professor-view-tab" class="px-4 py-2 font-medium text-gray-500 hover:text-blue-600">Por Professor</button>
-                <button id="classroom-view-tab" class="px-4 py-2 font-medium text-gray-500 hover:text-blue-600">Por Sala</button>
-            </div>
-
-            <!-- Semester Schedule View -->
-            <div id="semester-schedule-view">
-                <div class="bg-white p-4 rounded-lg shadow mb-6">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-medium">Horário do Semestre</h3>
-                        <button id="print-semester-schedule" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg flex items-center no-print">
-                            <i class="fas fa-print mr-2"></i> Imprimir
-                        </button>
-                    </div>
-                    <div id="semester-schedule-container" class="print-section">
-                        <!-- Schedule grid will be added here -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- Professor Schedule View -->
-            <div id="professor-schedule-view" class="hidden">
-                <div class="bg-white p-4 rounded-lg shadow mb-6">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-medium">Horário do Professor</h3>
-                        <button id="print-professor-schedule" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg flex items-center no-print">
-                            <i class="fas fa-print mr-2"></i> Imprimir
-                        </button>
-                    </div>
-                    <div id="professor-schedule-container" class="print-section">
-                        <!-- Schedule grid will be added here -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- Classroom Schedule View -->
-            <div id="classroom-schedule-view" class="hidden">
-                <div class="bg-white p-4 rounded-lg shadow mb-6">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-medium">Horário da Sala</h3>
-                        <button id="print-classroom-schedule" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg flex items-center no-print">
-                            <i class="fas fa-print mr-2"></i> Imprimir
-                        </button>
-                    </div>
-                    <div id="classroom-schedule-container" class="print-section">
-                        <!-- Schedule grid will be added here -->
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Reports Section -->
-        <section id="reports-section" class="mb-8 hidden">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6">Relatórios</h2>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="bg-white p-6 rounded-lg shadow">
-                    <h3 class="text-lg font-medium mb-4">Relatório de Professores</h3>
-                    <div class="mb-4">
-                        <label for="report-professor" class="block text-sm font-medium text-gray-700 mb-1">Professor</label>
-                        <select id="report-professor" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="">Todos os professores</option>
-                            <!-- Options will be added dynamically -->
-                        </select>
-                    </div>
-                    <button id="generate-professor-report" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center justify-center">
-                        <i class="fas fa-file-alt mr-2"></i> Gerar Relatório
-                    </button>
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Dashboard Section -->
+            <section id="dashboard" class="section active">
+                <div class="section-header">
+                    <h2><i class="fas fa-home"></i> Dashboard</h2>
+                    <p>Visão geral do sistema de gestão de horários</p>
                 </div>
                 
-                <div class="bg-white p-6 rounded-lg shadow">
-                    <h3 class="text-lg font-medium mb-4">Relatório de Semestre/Turma</h3>
-                    <div class="mb-4">
-                        <label for="report-semester" class="block text-sm font-medium text-gray-700 mb-1">Semestre/Turma</label>
-                        <select id="report-semester" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="">Todos os semestres</option>
-                            <!-- Options will be added dynamically -->
-                        </select>
+                <div class="dashboard-grid">
+                    <div class="dashboard-card">
+                        <div class="card-icon">
+                            <i class="fas fa-chalkboard-teacher"></i>
+                        </div>
+                        <div class="card-content">
+                            <h3>Professores</h3>
+                            <span class="count" id="professores-count">0</span>
+                            <p>cadastrados</p>
+                        </div>
                     </div>
-                    <button id="generate-semester-report" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center justify-center">
-                        <i class="fas fa-file-alt mr-2"></i> Gerar Relatório
+                    
+                    <div class="dashboard-card">
+                        <div class="card-icon">
+                            <i class="fas fa-book"></i>
+                        </div>
+                        <div class="card-content">
+                            <h3>Disciplinas</h3>
+                            <span class="count" id="disciplinas-count">0</span>
+                            <p>cadastradas</p>
+                        </div>
+                    </div>
+                    
+                    <div class="dashboard-card">
+                        <div class="card-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="card-content">
+                            <h3>Turmas</h3>
+                            <span class="count" id="turmas-count">0</span>
+                            <p>cadastradas</p>
+                        </div>
+                    </div>
+                    
+                    <div class="dashboard-card">
+                        <div class="card-icon">
+                            <i class="fas fa-door-open"></i>
+                        </div>
+                        <div class="card-content">
+                            <h3>Salas</h3>
+                            <span class="count" id="salas-count">0</span>
+                            <p>cadastradas</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="recent-activity">
+                    <h3><i class="fas fa-history"></i> Atividade Recente</h3>
+                    <div class="activity-list" id="activity-list">
+                        <p class="no-activity">Nenhuma atividade recente</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Cadastros Section -->
+            <section id="cadastros" class="section">
+                <div class="section-header">
+                    <h2><i class="fas fa-plus-circle"></i> Cadastros</h2>
+                    <p>Gerencie professores, disciplinas, turmas e salas</p>
+                </div>
+
+                <div class="cadastros-tabs">
+                    <button class="tab-btn active" data-tab="professores">
+                        <i class="fas fa-chalkboard-teacher"></i>
+                        Professores
+                    </button>
+                    <button class="tab-btn" data-tab="disciplinas">
+                        <i class="fas fa-book"></i>
+                        Disciplinas
+                    </button>
+                    <button class="tab-btn" data-tab="turmas">
+                        <i class="fas fa-users"></i>
+                        Turmas
+                    </button>
+                    <button class="tab-btn" data-tab="salas">
+                        <i class="fas fa-door-open"></i>
+                        Salas
                     </button>
                 </div>
-            </div>
-            
-            <div class="bg-white p-6 rounded-lg shadow mt-6">
-                <h3 class="text-lg font-medium mb-4">Relatório de Conflitos</h3>
-                <p class="mb-4">Este relatório mostra todos os conflitos de horário detectados no sistema.</p>
-                <button id="generate-conflict-report" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center">
-                    <i class="fas fa-exclamation-triangle mr-2"></i> Gerar Relatório de Conflitos
-                </button>
-                <div id="conflict-report-container" class="mt-4 hidden">
-                    <!-- Conflict report will be added here -->
+
+                <!-- Professores Tab -->
+                <div id="professores-tab" class="tab-content active">
+                    <div class="form-container">
+                        <h3>Cadastrar Professor</h3>
+                        <form id="professor-form" class="form">
+                            <div class="form-group">
+                                <label for="professor-nome">Nome Completo *</label>
+                                <input type="text" id="professor-nome" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="professor-email">E-mail</label>
+                                <input type="email" id="professor-email">
+                            </div>
+                            <div class="form-group">
+                                <label for="professor-disciplinas">Disciplinas que pode lecionar</label>
+                                <select id="professor-disciplinas" multiple>
+                                    <!-- Opções serão preenchidas dinamicamente -->
+                                </select>
+                                <small>Mantenha Ctrl pressionado para selecionar múltiplas disciplinas</small>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i>
+                                    Salvar Professor
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="clearForm('professor-form')">
+                                    <i class="fas fa-times"></i>
+                                    Limpar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <div class="list-container">
+                        <h3>Professores Cadastrados</h3>
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="search-professores" placeholder="Buscar professor...">
+                        </div>
+                        <div id="professores-list" class="items-list">
+                            <!-- Lista será preenchida dinamicamente -->
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </section>
+
+                <!-- Disciplinas Tab -->
+                <div id="disciplinas-tab" class="tab-content">
+                    <div class="form-container">
+                        <h3>Cadastrar Disciplina</h3>
+                        <form id="disciplina-form" class="form">
+                            <div class="form-group">
+                                <label for="disciplina-nome">Nome da Disciplina *</label>
+                                <input type="text" id="disciplina-nome" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="disciplina-codigo">Código da Disciplina *</label>
+                                <input type="text" id="disciplina-codigo" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="disciplina-carga">Carga Horária (horas/aula) *</label>
+                                <input type="number" id="disciplina-carga" min="1" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="disciplina-turno">Turno *</label>
+                                <select id="disciplina-turno" required>
+                                    <option value="">Selecione o turno</option>
+                                    <option value="matutino">Matutino</option>
+                                    <option value="noturno">Noturno</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="disciplina-semestre">Semestre Curricular *</label>
+                                <select id="disciplina-semestre" required>
+                                    <option value="">Selecione o semestre</option>
+                                    <!-- Opções serão preenchidas dinamicamente baseadas no turno -->
+                                </select>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i>
+                                    Salvar Disciplina
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="clearForm('disciplina-form')">
+                                    <i class="fas fa-times"></i>
+                                    Limpar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <div class="list-container">
+                        <h3>Disciplinas Cadastradas</h3>
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="search-disciplinas" placeholder="Buscar disciplina...">
+                        </div>
+                        <div id="disciplinas-list" class="items-list">
+                            <!-- Lista será preenchida dinamicamente -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Turmas Tab -->
+                <div id="turmas-tab" class="tab-content">
+                    <div class="form-container">
+                        <h3>Cadastrar Turma</h3>
+                        <form id="turma-form" class="form">
+                            <div class="form-group">
+                                <label for="turma-turno">Turno *</label>
+                                <select id="turma-turno" required>
+                                    <option value="">Selecione o turno</option>
+                                    <option value="matutino">Matutino</option>
+                                    <option value="noturno">Noturno</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="turma-semestre">Semestre Curricular *</label>
+                                <select id="turma-semestre" required>
+                                    <option value="">Selecione o semestre</option>
+                                    <!-- Opções serão preenchidas dinamicamente baseadas no turno -->
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="turma-tipo">Tipo de Turma *</label>
+                                <select id="turma-tipo" required>
+                                    <option value="">Selecione o tipo</option>
+                                    <option value="regular">Regular</option>
+                                    <option value="extra">Extra</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="turma-codigo">Código da Turma *</label>
+                                <select id="turma-codigo" required>
+                                    <option value="">Selecione o código</option>
+                                    <!-- Opções serão preenchidas dinamicamente baseadas no turno e tipo -->
+                                </select>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i>
+                                    Salvar Turma
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="clearForm('turma-form')">
+                                    <i class="fas fa-times"></i>
+                                    Limpar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <div class="list-container">
+                        <h3>Turmas Cadastradas</h3>
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="search-turmas" placeholder="Buscar turma...">
+                        </div>
+                        <div id="turmas-list" class="items-list">
+                            <!-- Lista será preenchida dinamicamente -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Salas Tab -->
+                <div id="salas-tab" class="tab-content">
+                    <div class="form-container">
+                        <h3>Cadastrar Sala</h3>
+                        <form id="sala-form" class="form">
+                            <div class="form-group">
+                                <label for="sala-nome">Nome/Número da Sala *</label>
+                                <input type="text" id="sala-nome" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="sala-capacidade">Capacidade</label>
+                                <input type="number" id="sala-capacidade" min="1">
+                            </div>
+                            <div class="form-group">
+                                <label for="sala-recursos">Recursos</label>
+                                <div class="checkbox-group">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" value="projetor"> Projetor
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" value="ar-condicionado"> Ar Condicionado
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" value="computador"> Computador
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" value="quadro-digital"> Quadro Digital
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i>
+                                    Salvar Sala
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="clearForm('sala-form')">
+                                    <i class="fas fa-times"></i>
+                                    Limpar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <div class="list-container">
+                        <h3>Salas Cadastradas</h3>
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="search-salas" placeholder="Buscar sala...">
+                        </div>
+                        <div id="salas-list" class="items-list">
+                            <!-- Lista será preenchida dinamicamente -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Horários Section -->
+            <section id="horarios" class="section">
+                <div class="section-header">
+                    <h2><i class="fas fa-clock"></i> Gestão de Horários</h2>
+                    <p>Configure os horários das disciplinas</p>
+                </div>
+
+                <div class="horarios-controls">
+                    <div class="control-group">
+                        <label for="horario-turma">Selecionar Turma:</label>
+                        <select id="horario-turma">
+                            <option value="">Selecione uma turma</option>
+                            <!-- Opções serão preenchidas dinamicamente -->
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <button class="btn btn-primary" id="btn-novo-horario">
+                            <i class="fas fa-plus"></i>
+                            Novo Horário
+                        </button>
+                        <button class="btn btn-secondary" id="btn-limpar-horarios">
+                            <i class="fas fa-trash"></i>
+                            Limpar Horários
+                        </button>
+                    </div>
+                </div>
+
+                <div id="horarios-grid" class="horarios-grid">
+                    <!-- Grade de horários será gerada dinamicamente -->
+                </div>
+
+                <!-- Modal para adicionar/editar horário -->
+                <div id="horario-modal" class="modal">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3>Configurar Horário</h3>
+                            <button class="modal-close">&times;</button>
+                        </div>
+                        <form id="horario-form" class="form">
+                            <div class="form-group">
+                                <label for="modal-disciplina">Disciplina *</label>
+                                <select id="modal-disciplina" required>
+                                    <option value="">Selecione a disciplina</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="modal-professor">Professor *</label>
+                                <select id="modal-professor" required>
+                                    <option value="">Selecione o professor</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="modal-sala">Sala *</label>
+                                <select id="modal-sala" required>
+                                    <option value="">Selecione a sala</option>
+                                </select>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i>
+                                    Salvar
+                                </button>
+                                <button type="button" class="btn btn-secondary modal-close">
+                                    <i class="fas fa-times"></i>
+                                    Cancelar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Impressão Section -->
+            <section id="impressao" class="section">
+                <div class="section-header">
+                    <h2><i class="fas fa-print"></i> Impressão de Horários</h2>
+                    <p>Gere e imprima horários por turma ou professor</p>
+                </div>
+
+                <div class="impressao-options">
+                    <div class="option-card">
+                        <div class="option-header">
+                            <i class="fas fa-users"></i>
+                            <h3>Horário por Turma</h3>
+                        </div>
+                        <div class="option-content">
+                            <div class="form-group">
+                                <label for="print-turma">Selecionar Turma:</label>
+                                <select id="print-turma">
+                                    <option value="">Selecione uma turma</option>
+                                </select>
+                            </div>
+                            <button class="btn btn-primary" id="btn-print-turma">
+                                <i class="fas fa-print"></i>
+                                Gerar Horário da Turma
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="option-card">
+                        <div class="option-header">
+                            <i class="fas fa-chalkboard-teacher"></i>
+                            <h3>Horário por Professor</h3>
+                        </div>
+                        <div class="option-content">
+                            <div class="form-group">
+                                <label for="print-professor">Selecionar Professor:</label>
+                                <select id="print-professor">
+                                    <option value="">Selecione um professor</option>
+                                </select>
+                            </div>
+                            <button class="btn btn-primary" id="btn-print-professor">
+                                <i class="fas fa-print"></i>
+                                Gerar Horário do Professor
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="print-preview" class="print-preview">
+                    <!-- Preview do horário será exibido aqui -->
+                </div>
+            </section>
+        </main>
+
+        <!-- Alerts Container -->
+        <div id="alerts-container" class="alerts-container">
+            <!-- Alertas serão exibidos aqui -->
+        </div>
     </div>
 
-    <script>
-        // Data storage
-        const data = {
-            professors: [],
-            subjects: [],
-            classrooms: [],
-            schedules: []
-        };
-
-        // DOM Elements
-        const sections = {
-            dashboard: document.getElementById('dashboard-section'),
-            professors: document.getElementById('professors-section'),
-            subjects: document.getElementById('subjects-section'),
-            classrooms: document.getElementById('classrooms-section'),
-            schedules: document.getElementById('schedules-section'),
-            reports: document.getElementById('reports-section')
-        };
-
-        const tabs = {
-            dashboard: document.getElementById('dashboard-tab'),
-            professors: document.getElementById('professors-tab'),
-            subjects: document.getElementById('subjects-tab'),
-            classrooms: document.getElementById('classrooms-tab'),
-            schedules: document.getElementById('schedules-tab'),
-            reports: document.getElementById('reports-tab')
-        };
-
-        // Initialize the app
-        document.addEventListener('DOMContentLoaded', function() {
-            // Load sample data
-            loadSampleData();
-            
-            // Set up tab navigation
-            setupTabNavigation();
-            
-            // Set up professor management
-            setupProfessorManagement();
-            
-            // Set up subject management
-            setupSubjectManagement();
-            
-            // Set up classroom management
-            setupClassroomManagement();
-            
-            // Set up schedule management
-            setupScheduleManagement();
-            
-            // Set up reports
-            setupReports();
-            
-            // Update dashboard counts
-            updateDashboardCounts();
-            
-            // Show dashboard by default
-            showSection('dashboard');
-        });
-
-        // Load sample data
-        function loadSampleData() {
-            // Sample professors
-            data.professors = [
-                { id: 1, name: "João Silva", email: "joao.silva@uesc.br", phone: "(73) 99999-9999" },
-                { id: 2, name: "Maria Santos", email: "maria.santos@uesc.br", phone: "(73) 98888-8888" },
-                { id: 3, name: "Carlos Oliveira", email: "carlos.oliveira@uesc.br", phone: "(73) 97777-7777" }
-            ];
-
-            // Sample subjects
-            data.subjects = [
-                { id: 1, code: "ECO101", name: "Introdução à Economia", semester: "1", shift: "matutino", workload: 60 },
-                { id: 2, code: "ECO102", name: "Matemática para Economistas", semester: "1", shift: "matutino", workload: 60 },
-                { id: 3, code: "ECO201", name: "Microeconomia I", semester: "2", shift: "matutino", workload: 60 },
-                { id: 4, code: "ECO301", name: "Macroeconomia I", semester: "3", shift: "matutino", workload: 60 },
-                { id: 5, code: "ECO401", name: "Econometria", semester: "4", shift: "matutino", workload: 60 },
-                { id: 6, code: "ECO501", name: "Economia Brasileira", semester: "5", shift: "matutino", workload: 60 },
-                { id: 7, code: "ECO601", name: "Economia Internacional", semester: "6", shift: "matutino", workload: 60 },
-                { id: 8, code: "ECO701", name: "Economia do Setor Público", semester: "7", shift: "matutino", workload: 60 },
-                { id: 9, code: "ECO801", name: "Economia do Trabalho", semester: "8", shift: "matutino", workload: 60 },
-                { id: 10, code: "ECO901", name: "TCC", semester: "9", shift: "matutino", workload: 60 },
-                { id: 11, code: "ECON101", name: "Introdução à Economia", semester: "1", shift: "noturno", workload: 60 },
-                { id: 12, code: "ECON102", name: "Matemática para Economistas", semester: "1", shift: "noturno", workload: 60 },
-                { id: 13, code: "ECON201", name: "Microeconomia I", semester: "2", shift: "noturno", workload: 60 },
-                { id: 14, code: "ECON301", name: "Macroeconomia I", semester: "3", shift: "noturno", workload: 60 },
-                { id: 15, code: "ECON401", name: "Econometria", semester: "4", shift: "noturno", workload: 60 },
-                { id: 16, code: "ECON501", name: "Economia Brasileira", semester: "5", shift: "noturno", workload: 60 },
-                { id: 17, code: "ECON601", name: "Economia Internacional", semester: "6", shift: "noturno", workload: 60 },
-                { id: 18, code: "ECON701", name: "Economia do Setor Público", semester: "7", shift: "noturno", workload: 60 },
-                { id: 19, code: "ECON801", name: "Economia do Trabalho", semester: "8", shift: "noturno", workload: 60 },
-                { id: 20, code: "ECON901", name: "TCC I", semester: "9", shift: "noturno", workload: 60 },
-                { id: 21, code: "ECON1001", name: "TCC II", semester: "10", shift: "noturno", workload: 60 }
-            ];
-
-            // Sample classrooms
-            data.classrooms = [
-                { id: 1, code: "S101", name: "Sala 101", capacity: 40, type: "sala" },
-                { id: 2, code: "S102", name: "Sala 102", capacity: 40, type: "sala" },
-                { id: 3, code: "S103", name: "Sala 103", capacity: 40, type: "sala" },
-                { id: 4, code: "S201", name: "Sala 201", capacity: 40, type: "sala" },
-                { id: 5, code: "S202", name: "Sala 202", capacity: 40, type: "sala" },
-                { id: 6, code: "L101", name: "Laboratório 101", capacity: 30, type: "laboratorio" },
-                { id: 7, code: "A101", name: "Auditório 101", capacity: 100, type: "auditorio" }
-            ];
-
-            // Sample schedules
-            data.schedules = [
-                { id: 1, semester: "1", shift: "matutino", subjectId: 1, professorId: 1, classroomId: 1, day: "segunda", time: "7:30-8:20", notes: "" },
-                { id: 2, semester: "1", shift: "matutino", subjectId: 2, professorId: 2, classroomId: 2, day: "segunda", time: "8:20-9:10", notes: "" },
-                { id: 3, semester: "1", shift: "matutino", subjectId: 1, professorId: 1, classroomId: 1, day: "quarta", time: "7:30-8:20", notes: "" },
-                { id: 4, semester: "1", shift: "matutino", subjectId: 2, professorId: 2, classroomId: 2, day: "quarta", time: "8:20-9:10", notes: "" },
-                { id: 5, semester: "1", shift: "noturno", subjectId: 11, professorId: 3, classroomId: 3, day: "segunda", time: "18:40-19:30", notes: "" },
-                { id: 6, semester: "1", shift: "noturno", subjectId: 12, professorId: 1, classroomId: 4, day: "segunda", time: "19:30-20:20", notes: "" }
-            ];
-        }
-
-        // Set up tab navigation
-        function setupTabNavigation() {
-            for (const [tabName, tabElement] of Object.entries(tabs)) {
-                tabElement.addEventListener('click', function() {
-                    showSection(tabName);
-                });
-            }
-        }
-
-        // Show a specific section
-        function showSection(sectionName) {
-            // Hide all sections
-            for (const section of Object.values(sections)) {
-                section.classList.add('hidden');
-            }
-
-            // Remove active class from all tabs
-            for (const tab of Object.values(tabs)) {
-                tab.classList.remove('text-blue-600', 'border-b-2', 'border-blue-600');
-                tab.classList.add('text-gray-500', 'hover:text-blue-600');
-            }
-
-            // Show the selected section
-            sections[sectionName].classList.remove('hidden');
-
-            // Add active class to the selected tab
-            tabs[sectionName].classList.remove('text-gray-500', 'hover:text-blue-600');
-            tabs[sectionName].classList.add('text-blue-600', 'border-b-2', 'border-blue-600');
-
-            // Update specific section content if needed
-            if (sectionName === 'professors') {
-                updateProfessorsTable();
-            } else if (sectionName === 'subjects') {
-                updateSubjectsTable();
-            } else if (sectionName === 'classrooms') {
-                updateClassroomsTable();
-            } else if (sectionName === 'schedules') {
-                updateScheduleFilters();
-                showScheduleView('semester');
-            } else if (sectionName === 'dashboard') {
-                updateRecentSchedules();
-            }
-        }
-
-        // Update dashboard counts
-        function updateDashboardCounts() {
-            document.getElementById('professor-count').textContent = data.professors.length;
-            document.getElementById('subject-count').textContent = data.subjects.length;
-            document.getElementById('classroom-count').textContent = data.classrooms.length;
-        }
-
-        // Update recent schedules on dashboard
-        function updateRecentSchedules() {
-            const recentSchedulesContainer = document.getElementById('recent-schedules');
-            recentSchedulesContainer.innerHTML = '';
-
-            // Get last 5 schedules
-            const recentSchedules = [...data.schedules].reverse().slice(0, 5);
-
-            for (const schedule of recentSchedules) {
-                const subject = data.subjects.find(s => s.id === schedule.subjectId);
-                const professor = data.professors.find(p => p.id === schedule.professorId);
-                const classroom = data.classrooms.find(c => c.id === schedule.classroomId);
-
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td class="px-6 py-4 whitespace-nowrap">${subject ? subject.name : 'N/A'}</td>
-                    <td class="px-6 py-4 whitespace-nowrap">${professor ? professor.name : 'N/A'}</td>
-                    <td class="px-6 py-4 whitespace-nowrap">${schedule.semester}º Semestre (${schedule.shift})</td>
-                    <td class="px-6 py-4 whitespace-nowrap">${classroom ? classroom.name : 'N/A'}</td>
-                    <td class="px-6 py-4 whitespace-nowrap">${schedule.day}, ${schedule.time}</td>
-                `;
-                recentSchedulesContainer.appendChild(row);
-            }
-        }
-
-        // Set up professor management
-        function setupProfessorManagement() {
-            const addProfessorBtn = document.getElementById('add-professor-btn');
-            const professorModal = document.getElementById('professor-modal');
-            const closeProfessorModal = document.getElementById('close-professor-modal');
-            const cancelProfessor = document.getElementById('cancel-professor');
-            const professorForm = document.getElementById('professor-form');
-
-            addProfessorBtn.addEventListener('click', function() {
-                professorModal.classList.remove('hidden');
-            });
-
-            closeProfessorModal.addEventListener('click', function() {
-                professorModal.classList.add('hidden');
-            });
-
-            cancelProfessor.addEventListener('click', function() {
-                professorModal.classList.add('hidden');
-            });
-
-            professorForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                const name = document.getElementById('professor-name').value;
-                const email = document.getElementById('professor-email').value;
-                const phone = document.getElementById('professor-phone').value;
-                
-                // Generate new ID
-                const newId = data.professors.length > 0 ? Math.max(...data.professors.map(p => p.id)) + 1 : 1;
-                
-                // Add new professor
-                data.professors.push({
-                    id: newId,
-                    name,
-                    email,
-                    phone
-                });
-                
-                // Close modal and reset form
-                professorModal.classList.add('hidden');
-                professorForm.reset();
-                
-                // Update professors table
-                updateProfessorsTable();
-                
-                // Update dashboard counts
-                updateDashboardCounts();
-                
-                // Update schedule filters
-                updateScheduleFilters();
-            });
-        }
-
-        // Update professors table
-        function updateProfessorsTable() {
-            const professorsTableBody = document.getElementById('professors-table-body');
-            professorsTableBody.innerHTML = '';
-
-            for (const professor of data.professors) {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td class="px-6 py-4 whitespace-nowrap">${professor.name}</td>
-                    <td class="px-6 py-4 whitespace-nowrap">${professor.email}</td>
-                    <td class="px-6 py-4 whitespace-nowrap">${professor.phone}</td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <button class="text-blue-600 hover:text-blue-900 mr-3 edit-professor" data-id="${professor.id}">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="text-red-600 hover:text-red-900 delete-professor" data-id="${professor.id}">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </td>
-                `;
-                professorsTableBody.appendChild(row);
-            }
-
-            // Add event listeners for edit and delete buttons
-            document.querySelectorAll('.edit-professor').forEach(button => {
-                button.addEventListener('click', function() {
-                    const professorId = parseInt(this.getAttribute('data-id'));
-                    editProfessor(professorId);
-                });
-            });
-
-            document.querySelectorAll('.delete-professor').forEach(button => {
-                button.addEventListener('click', function() {
-                    const professorId = parseInt(this.getAttribute('data-id'));
-                    deleteProfessor(professorId);
-                });
-            });
-        }
-
-        // Edit professor
-        function editProfessor(professorId) {
-            const professor = data.professors.find(p => p.id === professorId);
-            if (!professor) return;
-
-            const professorModal = document.getElementById('professor-modal');
-            const professorForm = document.getElementById('professor-form');
-
-            // Fill form with professor data
-            document.getElementById('professor-name').value = professor.name;
-            document.getElementById('professor-email').value = professor.email;
-            document.getElementById('professor-phone').value = professor.phone;
-
-            // Show modal
-            professorModal.classList.remove('hidden');
-
-            // Change form submit behavior to update instead of add
-            professorForm.onsubmit = function(e) {
-                e.preventDefault();
-                
-                const name = document.getElementById('professor-name').value;
-                const email = document.getElementById('professor-email').value;
-                const phone = document.getElementById('professor-phone').value;
-                
-                // Update professor
-                professor.name = name;
-                professor.email = email;
-                professor.phone = phone;
-                
-                // Close modal and reset form
-                professorModal.classList.add('hidden');
-                professorForm.reset();
-                
-                // Reset form submit behavior to add
-                professorForm.onsubmit = function(e) {
-                    e.preventDefault();
-                    
-                    const name = document.getElementById('professor-name').value;
-                    const email = document.getElementById('professor-email').value;
-                    const phone = document.getElementById('professor-phone').value;
-                    
-                    // Generate new ID
-                    const newId = data.professors.length > 0 ? Math.max(...data.professors.map(p => p.id)) + 1 : 1;
-                    
-                    // Add new professor
-                    data.professors.push({
-                        id: newId,
-                        name,
-                        email,
-                        phone
-                    });
-                    
-                    // Close modal and reset form
-                    professorModal.classList.add('hidden');
-                    professorForm.reset();
-                    
-                    // Update professors table
-                    updateProfessorsTable();
-                    
-                    // Update dashboard counts
-                    updateDashboardCounts();
-                    
-                    // Update schedule filters
-                    updateScheduleFilters();
-                };
-                
-                // Update professors table
-                updateProfessorsTable();
-                
-                // Update schedule filters
-                updateScheduleFilters();
-            };
-        }
-
-        // Delete professor
-        function deleteProfessor(professorId) {
-            if (confirm('Tem certeza que deseja excluir este professor?')) {
-                // Check if professor is assigned to any schedule
-                const assignedSchedules = data.schedules.filter(s => s.professorId === professorId);
-                
-                if (assignedSchedules.length > 0) {
-                    alert('Este professor está alocado em horários e não pode ser excluído.');
-                    return;
-                }
-                
-                // Remove professor
-                data.professors = data.professors.filter(p => p.id !== professorId);
-                
-                // Update professors table
-                updateProfessorsTable();
-                
-                // Update dashboard counts
-                updateDashboardCounts();
-                
-                // Update schedule filters
-                updateScheduleFilters();
-            }
-        }
-
-        // Set up subject management
-        function setupSubjectManagement() {
-            const addSubjectBtn = document.getElementById('add-subject-btn');
-            const subjectModal = document.getElementById('subject-modal');
-            const closeSubjectModal = document.getElementById('close-subject-modal');
-            const cancelSubject = document.getElementById('cancel-subject');
-            const subjectForm = document.getElementById('subject-form');
-
-            addSubjectBtn.addEventListener('click', function() {
-                subjectModal.classList.remove('hidden');
-            });
-
-            closeSubjectModal.addEventListener('click', function() {
-                subjectModal.classList.add('hidden');
-            });
-
-            cancelSubject.addEventListener('click', function() {
-                subjectModal.classList.add('hidden');
-            });
-
-            subjectForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                const code = document.getElementById('subject-code').value;
-                const name = document.getElementById('subject-name').value;
-                const semester = document.getElementById('subject-semester').value;
-                const shift = document.getElementById('subject-shift').value;
-                const workload = document.getElementById('subject-workload').value;
-                
-                // Generate new ID
-                const newId = data.subjects.length > 0 ? Math.max(...data.subjects.map(s => s.id)) + 1 : 1;
-                
-                // Add new subject
-                data.subjects.push({
-                    id: newId,
-                    code,
-                    name,
-                    semester,
-                    shift,
-                    workload
-                });
-                
-                // Close modal and reset form
-                subjectModal.classList.add('hidden');
-                subjectForm.reset();
-                
-                // Update subjects table
-                updateSubjectsTable();
-                
-                // Update dashboard counts
-                updateDashboardCounts();
-                
-                // Update schedule filters
-                updateScheduleFilters();
-            });
-        }
-
-        // Update subjects table
-        function updateSubjectsTable() {
-            const subjectsTableBody = document.getElementById('subjects-table-body');
-            subjectsTableBody.innerHTML = '';
-
-            for (const subject of data.subjects) {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td class="px-6 py-4 whitespace-nowrap">${subject.code}</td>
-                    <td class="px-6 py-4 whitespace-nowrap">${subject.name}</td>
-                    <td class="px-6 py-4 whitespace-nowrap">${subject.semester}º Semestre</td>
-                    <td class="px-6 py-4 whitespace-nowrap">${subject.shift === 'matutino' ? 'Matutino' : 'Noturno'}</td>
-                    <td class="px-6 py-4 whitespace-nowrap">${subject.workload} horas</td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <button class="text-blue-600 hover:text-blue-900 mr-3 edit-subject" data-id="${subject.id}">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="text-red-600 hover:text-red-900 delete-subject" data-id="${subject.id}">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </td>
-                `;
-                subjectsTableBody.appendChild(row);
-            }
-
-            // Add event listeners for edit and delete buttons
-            document.querySelectorAll('.edit-subject').forEach(button => {
-                button.addEventListener('click', function() {
-                    const subjectId = parseInt(this.getAttribute('data-id'));
-                    editSubject(subjectId);
-                });
-            });
-
-            document.querySelectorAll('.delete-subject').forEach(button => {
-                button.addEventListener('click', function() {
-                    const subjectId = parseInt(this.getAttribute('data-id'));
-                    deleteSubject(subjectId);
-                });
-            });
-        }
-
-        // Edit subject
-        function editSubject(subjectId) {
-            const subject = data.subjects.find(s => s.id === subjectId);
-            if (!subject) return;
-
-            const subjectModal = document.getElementById('subject-modal');
-            const subjectForm = document.getElementById('subject-form');
-
-            // Fill form with subject data
-            document.getElementById('subject-code').value = subject.code;
-            document.getElementById('subject-name').value = subject.name;
-            document.getElementById('subject-semester').value = subject.semester;
-            document.getElementById('subject-shift').value = subject.shift;
-            document.getElementById('subject-workload').value = subject.workload;
-
-            // Show modal
-            subjectModal.classList.remove('hidden');
-
-            // Change form submit behavior to update instead of add
-            subjectForm.onsubmit = function(e) {
-                e.preventDefault();
-                
-                const code = document.getElementById('subject-code').value;
-                const name = document.getElementById('subject-name').value;
-                const semester = document.getElementById('subject-semester').value;
-                const shift = document.getElementById('subject-shift').value;
-                const workload = document.getElementById('subject-workload').value;
-                
-                // Update subject
-                subject.code = code;
-                subject.name = name;
-                subject.semester = semester;
-                subject.shift = shift;
-                subject.workload = workload;
-                
-                // Close modal and reset form
-                subjectModal.classList.add('hidden');
-                subjectForm.reset();
-                
-                // Reset form submit behavior to add
-                subjectForm.onsubmit = function(e) {
-                    e.preventDefault();
-                    
-                    const code = document.getElementById('subject-code').value;
-                    const name = document.getElementById('subject-name').value;
-                    const semester = document.getElementById('subject-semester').value;
-                    const shift = document.getElementById('subject-shift').value;
-                    const workload = document.getElementById('subject-workload').value;
-                    
-                    // Generate new ID
-                    const newId = data.subjects.length > 0 ? Math.max(...data.subjects.map(s => s.id)) + 1 : 1;
-                    
-                    // Add new subject
-                    data.subjects.push({
-                        id: newId,
-                        code,
-                        name,
-                        semester,
-                        shift,
-                        workload
-                    });
-                    
-                    // Close modal and reset form
-                    subjectModal.classList.add('hidden');
-                    subjectForm.reset();
-                    
-                    // Update subjects table
-                    updateSubjectsTable();
-                    
-                    // Update dashboard counts
-                    updateDashboardCounts();
-                    
-                    // Update schedule filters
-                    updateScheduleFilters();
-                };
-                
-                // Update subjects table
-                updateSubjectsTable();
-                
-                // Update schedule filters
-                updateScheduleFilters();
-            };
-        }
-
-        // Delete subject
-        function deleteSubject(subjectId) {
-            if (confirm('Tem certeza que deseja excluir esta disciplina?')) {
-                // Check if subject is assigned to any schedule
-                const assignedSchedules = data.schedules.filter(s => s.subjectId === subjectId);
-                
-                if (assignedSchedules.length > 0) {
-                    alert('Esta disciplina está alocada em horários e não pode ser excluída.');
-                    return;
-                }
-                
-                // Remove subject
-                data.subjects = data.subjects.filter(s => s.id !== subjectId);
-                
-                // Update subjects table
-                updateSubjectsTable();
-                
-                // Update dashboard counts
-                updateDashboardCounts();
-                
-                // Update schedule filters
-                updateScheduleFilters();
-            }
-        }
-
-        // Set up classroom management
-        function setupClassroomManagement() {
-            const addClassroomBtn = document.getElementById('add-classroom-btn');
-            const classroomModal = document.getElementById('classroom-modal');
-            const closeClassroomModal = document.getElementById('close-classroom-modal');
-            const cancelClassroom = document.getElementById('cancel-classroom');
-            const classroomForm = document.getElementById('classroom-form');
-
-            addClassroomBtn.addEventListener('click', function() {
-                classroomModal.classList.remove('hidden');
-            });
-
-            closeClassroomModal.addEventListener('click', function() {
-                classroomModal.classList.add('hidden');
-            });
-
-            cancelClassroom.addEventListener('click', function() {
-                classroomModal.classList.add('hidden');
-            });
-
-            classroomForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                const code = document.getElementById('classroom-code').value;
-                const name = document.getElementById('classroom-name').value;
-                const capacity = document.getElementById('classroom-capacity').value;
-                const type = document.getElementById('classroom-type').value;
-                
-                // Generate new ID
-                const newId = data.classrooms.length > 0 ? Math.max(...data.classrooms.map(c => c.id)) + 1 : 1;
-                
-                // Add new classroom
-                data.classrooms.push({
-                    id: newId,
-                    code,
-                    name,
-                    capacity,
-                    type
-                });
-                
-                // Close modal and reset form
-                classroomModal.classList.add('hidden');
-                classroomForm.reset();
-                
-                // Update classrooms table
-                updateClassroomsTable();
-                
-                // Update dashboard counts
-                updateDashboardCounts();
-                
-                // Update schedule filters
-                updateScheduleFilters();
-            });
-        }
-
-        // Update classrooms table
-        function updateClassroomsTable() {
-            const classroomsTableBody = document.getElementById('classrooms-table-body');
-            classroomsTableBody.innerHTML = '';
-
-            for (const classroom of data.classrooms) {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td class="px-6 py-4 whitespace-nowrap">${classroom.code}</td>
-                    <td class="px-6 py-4 whitespace-nowrap">${classroom.name}</td>
-                    <td class="px-6 py-4 whitespace-nowrap">${classroom.capacity}</td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        ${classroom.type === 'sala' ? 'Sala de Aula' : 
-                          classroom.type === 'laboratorio' ? 'Laboratório' : 'Auditório'}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <button class="text-blue-600 hover:text-blue-900 mr-3 edit-classroom" data-id="${classroom.id}">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="text-red-600 hover:text-red-900 delete-classroom" data-id="${classroom.id}">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </td>
-                `;
-                classroomsTableBody.appendChild(row);
-            }
-
-            // Add event listeners for edit and delete buttons
-            document.querySelectorAll('.edit-classroom').forEach(button => {
-                button.addEventListener('click', function() {
-                    const classroomId = parseInt(this.getAttribute('data-id'));
-                    editClassroom(classroomId);
-                });
-            });
-
-            document.querySelectorAll('.delete-classroom').forEach(button => {
-                button.addEventListener('click', function() {
-                    const classroomId = parseInt(this.getAttribute('data-id'));
-                    deleteClassroom(classroomId);
-                });
-            });
-        }
-
-        // Edit classroom
-        function editClassroom(classroomId) {
-            const classroom = data.classrooms.find(c => c.id === classroomId);
-            if (!classroom) return;
-
-            const classroomModal = document.getElementById('classroom-modal');
-            const classroomForm = document.getElementById('classroom-form');
-
-            // Fill form with classroom data
-            document.getElementById('classroom-code').value = classroom.code;
-            document.getElementById('classroom-name').value = classroom.name;
-            document.getElementById('classroom-capacity').value = classroom.capacity;
-            document.getElementById('classroom-type').value = classroom.type;
-
-            // Show modal
-            classroomModal.classList.remove('hidden');
-
-            // Change form submit behavior to update instead of add
-            classroomForm.onsubmit = function(e) {
-                e.preventDefault();
-                
-                const code = document.getElementById('classroom-code').value;
-                const name = document.getElementById('classroom-name').value;
-                const capacity = document.getElementById('classroom-capacity').value;
-                const type = document.getElementById('classroom-type').value;
-                
-                // Update classroom
-                classroom.code = code;
-                classroom.name = name;
-                classroom.capacity = capacity;
-                classroom.type = type;
-                
-                // Close modal and reset form
-                classroomModal.classList.add('hidden');
-                classroomForm.reset();
-                
-                // Reset form submit behavior to add
-                classroomForm.onsubmit = function(e) {
-                    e.preventDefault();
-                    
-                    const code = document.getElementById('classroom-code').value;
-                    const name = document.getElementById('classroom-name').value;
-                    const capacity = document.getElementById('classroom-capacity').value;
-                    const type = document.getElementById('classroom-type').value;
-                    
-                    // Generate new ID
-                    const newId = data.classrooms.length > 0 ? Math.max(...data.classrooms.map(c => c.id)) + 1 : 1;
-                    
-                    // Add new classroom
-                    data.classrooms.push({
-                        id: newId,
-                        code,
-                        name,
-                        capacity,
-                        type
-                    });
-                    
-                    // Close modal and reset form
-                    classroomModal.classList.add('hidden');
-                    classroomForm.reset();
-                    
-                    // Update classrooms table
-                    updateClassroomsTable();
-                    
-                    // Update dashboard counts
-                    updateDashboardCounts();
-                    
-                    // Update schedule filters
-                    updateScheduleFilters();
-                };
-                
-                // Update classrooms table
-                updateClassroomsTable();
-                
-                // Update schedule filters
-                updateScheduleFilters();
-            };
-        }
-
-        // Delete classroom
-        function deleteClassroom(classroomId) {
-            if (confirm('Tem certeza que deseja excluir esta sala?')) {
-                // Check if classroom is assigned to any schedule
-                const assignedSchedules = data.schedules.filter(s => s.classroomId === classroomId);
-                
-                if (assignedSchedules.length > 0) {
-                    alert('Esta sala está alocada em horários e não pode ser excluída.');
-                    return;
-                }
-                
-                // Remove classroom
-                data.classrooms = data.classrooms.filter(c => c.id !== classroomId);
-                
-                // Update classrooms table
-                updateClassroomsTable();
-                
-                // Update dashboard counts
-                updateDashboardCounts();
-                
-                // Update schedule filters
-                updateScheduleFilters();
-            }
-        }
-
-        // Set up schedule management
-        function setupScheduleManagement() {
-            const addScheduleBtn = document.getElementById('add-schedule-btn');
-            const scheduleModal = document.getElementById('schedule-modal');
-            const closeScheduleModal = document.getElementById('close-schedule-modal');
-            const cancelSchedule = document.getElementById('cancel-schedule');
-            const scheduleForm = document.getElementById('schedule-form');
-
-            // Schedule view tabs
-            const semesterViewTab = document.getElementById('semester-view-tab');
-            const professorViewTab = document.getElementById('professor-view-tab');
-            const classroomViewTab = document.getElementById('classroom-view-tab');
-
-            semesterViewTab.addEventListener('click', function() {
-                showScheduleView('semester');
-            });
-
-            professorViewTab.addEventListener('click', function() {
-                showScheduleView('professor');
-            });
-
-            classroomViewTab.addEventListener('click', function() {
-                showScheduleView('classroom');
-            });
-
-            // Print buttons
-            document.getElementById('print-semester-schedule').addEventListener('click', function() {
-                window.print();
-            });
-
-            document.getElementById('print-professor-schedule').addEventListener('click', function() {
-                window.print();
-            });
-
-            document.getElementById('print-classroom-schedule').addEventListener('click', function() {
-                window.print();
-            });
-
-            addScheduleBtn.addEventListener('click', function() {
-                // Reset form
-                scheduleForm.reset();
-                
-                // Update semester dropdown
-                updateSemesterDropdown();
-                
-                // Update subject dropdown
-                updateSubjectDropdown();
-                
-                // Update professor dropdown
-                updateProfessorDropdown();
-                
-                // Update classroom dropdown
-                updateClassroomDropdown();
-                
-                // Hide conflict alert
-                document.getElementById('schedule-conflict-alert').classList.add('hidden');
-                
-                // Show modal
-                scheduleModal.classList.remove('hidden');
-            });
-
-            closeScheduleModal.addEventListener('click', function() {
-                scheduleModal.classList.add('hidden');
-            });
-
-            cancelSchedule.addEventListener('click', function() {
-                scheduleModal.classList.add('hidden');
-            });
-
-            // When semester is selected, update subject dropdown
-            document.getElementById('schedule-semester').addEventListener('change', function() {
-                updateSubjectDropdown();
-                
-                // Also update time slots based on shift
-                const semester = this.value;
-                if (semester) {
-                    const selectedSemester = semester.split('-');
-                    const shift = selectedSemester[1];
-                    updateTimeSlots(shift);
-                }
-            });
-
-            scheduleForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                const semester = document.getElementById('schedule-semester').value;
-                const subjectId = parseInt(document.getElementById('schedule-subject').value);
-                const professorId = parseInt(document.getElementById('schedule-professor').value);
-                const classroomId = parseInt(document.getElementById('schedule-classroom').value);
-                const day = document.getElementById('schedule-day').value;
-                const time = document.getElementById('schedule-time').value;
-                const notes = document.getElementById('schedule-notes').value;
-                
-                // Check for conflicts
-                const conflicts = checkForConflicts(professorId, classroomId, day, time);
-                
-                if (conflicts.professorConflict || conflicts.classroomConflict) {
-                    // Show conflict alert
-                    document.getElementById('schedule-conflict-alert').classList.remove('hidden');
-                    return;
-                }
-                
-                // Generate new ID
-                const newId = data.schedules.length > 0 ? Math.max(...data.schedules.map(s => s.id)) + 1 : 1;
-                
-                // Split semester into semester number and shift
-                const semesterParts = semester.split('-');
-                const semesterNumber = semesterParts[0];
-                const shift = semesterParts[1];
-                
-                // Add new schedule
-                data.schedules.push({
-                    id: newId,
-                    semester: semesterNumber,
-                    shift,
-                    subjectId,
-                    professorId,
-                    classroomId,
-                    day,
-                    time,
-                    notes
-                });
-                
-                // Close modal and reset form
-                scheduleModal.classList.add('hidden');
-                scheduleForm.reset();
-                
-                // Update schedule views
-                updateScheduleViews();
-                
-                // Update recent schedules on dashboard
-                updateRecentSchedules();
-                
-                // Update dashboard counts
-                updateDashboardCounts();
-            });
-        }
-
-        // Update semester dropdown
-        function updateSemesterDropdown() {
-            const semesterDropdown = document.getElementById('schedule-semester');
-            semesterDropdown.innerHTML = '<option value="">Selecione o semestre/turma</option>';
-            
-            // Add matutino semesters (1-9)
-            for (let i = 1; i <= 9; i++) {
-                const option = document.createElement('option');
-                option.value = `${i}-matutino`;
-                option.textContent = `${i}º Semestre (Matutino)`;
-                semesterDropdown.appendChild(option);
-            }
-            
-            // Add noturno semesters (1-10)
-            for (let i = 1; i <= 10; i++) {
-                const option = document.createElement('option');
-                option.value = `${i}-noturno`;
-                option.textContent = `${i}º Semestre (Noturno)`;
-                semesterDropdown.appendChild(option);
-            }
-        }
-
-        // Update subject dropdown based on selected semester
-        function updateSubjectDropdown() {
-            const semesterDropdown = document.getElementById('schedule-semester');
-            const subjectDropdown = document.getElementById('schedule-subject');
-            
-            subjectDropdown.innerHTML = '<option value="">Selecione a disciplina</option>';
-            
-            if (!semesterDropdown.value) return;
-            
-            const semesterParts = semesterDropdown.value.split('-');
-            const semesterNumber = semesterParts[0];
-            const shift = semesterParts[1];
-            
-            // Filter subjects by semester and shift
-            const filteredSubjects = data.subjects.filter(s => 
-                s.semester === semesterNumber && s.shift === shift
-            );
-            
-            // Add filtered subjects to dropdown
-            for (const subject of filteredSubjects) {
-                const option = document.createElement('option');
-                option.value = subject.id;
-                option.textContent = `${subject.code} - ${subject.name}`;
-                subjectDropdown.appendChild(option);
-            }
-        }
-
-        // Update professor dropdown
-        function updateProfessorDropdown() {
-            const professorDropdown = document
+    <script src="script.js"></script>
 </body>
 </html>
+
